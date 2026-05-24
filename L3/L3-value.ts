@@ -31,7 +31,7 @@ export type Class = {
 
 export type Object = {
     tag: "Object";
-    fields:CExp[];
+    fields: Value[];
     methods: Binding[];
     env: Env;
 }

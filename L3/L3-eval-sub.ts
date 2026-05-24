@@ -84,6 +84,12 @@ const applyClosure = (proc: Closure, args: Value[], env: Env): Result<Value> => 
     //return evalSequence(substitute(proc.body, vars, litArgs), env);
 }
 
+const applyClass = (proc: Class, args: Value[], env: Env): Result<Value> => {
+    if(proc.fields.length != args.length){
+        return makeFailure("Number of arguments does not match number of fields for the class");
+    }
+    return 
+}
 
 // Evaluate a sequence of expressions (in a program)
 export const evalSequence = (seq: List<Exp>, env: Env): Result<Value> =>
