@@ -8,7 +8,7 @@ import { isAppExp, isBoolExp, isDefineExp, isIfExp, isLitExp, isNumExp,
 import { makeBoolExp, makeLitExp, makeNumExp, makeProcExp, makeStrExp, makeClassExp} from "./L3-ast";
 import { parseL3Exp } from "./L3-ast";
 import { applyEnv, makeEmptyEnv, makeEnv, Env } from "./L3-env-sub";
-import { isClosure, makeClosure, Closure, Value, Class, Object, isObject} from "./L3-value";
+import { isClosure, makeClosure, Closure, Value, Class, Object, isObject, isClass, isSymbolSExp, makeClass, makeObject} from "./L3-value";
 import { first, rest, isEmpty, List, isNonEmptyList } from '../shared/list';
 import { isBoolean, isNumber, isString } from "../shared/type-predicates";
 import { Result, makeOk, makeFailure, bind, mapResult, mapv } from "../shared/result";
@@ -52,14 +52,14 @@ const evalProc = (exp: ProcExp, env: Env): Result<Closure> =>
     makeOk(makeClosure(exp.args, exp.body));
 
 
-const evalClassExp = (exp: ClassExp, env: Env): Result<ClassExp> =>
-        makeOk(makeClassExp(exp.fields, exp.methods));
+const evalClassExp = (exp: ClassExp, env: Env): Result<Class> =>
+    makeOk(makeClass(exp.fields, exp.methods, env));
 
 const L3applyProcedure = (proc: Value, args: Value[], env: Env): Result<Value> =>
     isPrimOp(proc) ? applyPrimitive(proc, args) :
     isClosure(proc) ? applyClosure(proc, args, env) :
-    isClassExp(proc) ? applyClass():
-    isObject(proc) ? applyObject():
+    isClass(proc) ? applyClass(proc, args, env):
+    isObject(proc) ? applyObject(proc, args, env):
     makeFailure(`Bad procedure ${format(proc)}`);
 
 
@@ -84,11 +84,32 @@ const applyClosure = (proc: Closure, args: Value[], env: Env): Result<Value> => 
     //return evalSequence(substitute(proc.body, vars, litArgs), env);
 }
 
-const applyClass = (proc: Class, args: Value[], env: Env): Result<Value> => {
-    if(proc.fields.length != args.length){
-        return makeFailure("Number of arguments does not match number of fields for the class");
+const applyClass = (cls: Class, args: Value[], env: Env): Result<Value> => {
+    return makeOk(makeObject(cls.fields, cls.methods, args, env));
+}
+
+const applyObject = (obj: Object, args: Value[], env: Env): Result<Value> => {
+    if (args.length === 0 || !isSymbolSExp(args[0])) {
+        return makeFailure("Object method invocation requires a method name (symbol)");
     }
-    return 
+    const methodName = args[0].val;
+    const methodBinding = obj.methods.find(m => m.var.var === methodName);
+    
+    if (!methodBinding) {
+        return makeFailure(`Unrecognized method: ${methodName}`);
+    }
+
+    // Prepare for Substitution: convert field values into literal expressions 
+    const fieldNames = obj.fields.map(f => f.var);
+    const fieldLitExps = obj.args.map(valueToLitExp);
+    
+    // Substitute fields into the method body AST
+    const substitutedMethodBody = substitute([methodBinding.val], fieldNames, fieldLitExps);
+    
+    // Evaluate the method (returns a Closure) and apply it to the remaining arguments
+    return bind(evalSequence(substitutedMethodBody, env), (methodClosure: Value) =>
+        L3applyProcedure(methodClosure, args.slice(1), env)
+    );
 }
 
 // Evaluate a sequence of expressions (in a program)
