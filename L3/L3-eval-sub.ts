@@ -53,7 +53,7 @@ const evalProc = (exp: ProcExp, env: Env): Result<Closure> =>
 
 
 const evalClassExp = (exp: ClassExp, env: Env): Result<Class> =>
-    makeOk(makeClass(exp.fields, exp.methods, env));
+    makeOk(makeClass(exp.fields, exp.methods));
 
 const L3applyProcedure = (proc: Value, args: Value[], env: Env): Result<Value> =>
     isPrimOp(proc) ? applyPrimitive(proc, args) :
@@ -85,7 +85,7 @@ const applyClosure = (proc: Closure, args: Value[], env: Env): Result<Value> => 
 }
 
 const applyClass = (cls: Class, args: Value[], env: Env): Result<Value> => {
-    return makeOk(makeObject(cls.fields, cls.methods, args, env));
+    return makeOk(makeObject(cls.fields, cls.methods, args));
 }
 
 const applyObject = (obj: Object, args: Value[], env: Env): Result<Value> => {

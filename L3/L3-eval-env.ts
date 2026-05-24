@@ -7,7 +7,7 @@ import { isBoolExp, isCExp, isLitExp, isNumExp, isPrimOp, isStrExp, isVarRef,
          Binding, VarDecl, CExp, Exp, IfExp, LetExp, ProcExp, Program,
          parseL3Exp,  DefineExp, ClassExp , isClassExp} from "./L3-ast";
 import { applyEnv, makeEmptyEnv, makeExtEnv, Env } from "./L3-env-env";
-import { isClosure, makeClosureEnv, Closure, Value, Class, Object, isClass, isObject, makeClass, makeObject, isSymbolSExp } from "./L3-value";
+import { isClosure, makeClosureEnv, Closure, Value, Class, Object, isClass, isObject, makeClass, makeObject, isSymbolSExp, makeClassEnv, makeObjectEnv } from "./L3-value";
 import { applyPrimitive } from "./evalPrimitive";
 import { allT, first, rest, isEmpty, isNonEmptyList } from "../shared/list";
 import { Result, makeOk, makeFailure, bind, mapResult } from "../shared/result";
@@ -48,7 +48,7 @@ const evalProc = (exp: ProcExp, env: Env): Result<Closure> =>
     makeOk(makeClosureEnv(exp.args, exp.body, env));
 
 const evalClassExp = (exp: ClassExp, env: Env): Result<Class> =>
-    makeOk(makeClass(exp.fields, exp.methods, env));
+    makeOk(makeClassEnv(exp.fields, exp.methods, env));
 
 // KEY: This procedure does NOT have an env parameter.
 //      Instead we use the env of the closure.
@@ -65,12 +65,10 @@ const applyClosure = (proc: Closure, args: Value[]): Result<Value> => {
 }
 
 const applyClass = (cls: Class, args: Value[]): Result<Value> => {
-    // 1. Create a new extended environment binding field names to the argument values
     const fieldNames = cls.fields.map(f => f.var);
     const extEnv = makeExtEnv(fieldNames, args, cls.env); 
     
-    // 2. Store this extended environment inside the Object
-    return makeOk(makeObject(cls.fields, cls.methods, args, extEnv));
+    return makeOk(makeObjectEnv(cls.fields, cls.methods, args, extEnv));
 }
 
 const applyObject = (obj: Object, args: Value[]): Result<Value> => {

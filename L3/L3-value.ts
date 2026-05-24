@@ -43,12 +43,20 @@ export const makeClosureEnv = (params: VarDecl[], body: CExp[], env: Env): Closu
     ({tag: "Closure", params: params, body: body, env: env});
 export const isClosure = (x: any): x is Closure => x.tag === "Closure";
 
-export const makeClass = (fields: VarDecl[], methods: Binding[], env: Env): Class =>
+export const makeClass = (fields: VarDecl[], methods: Binding[]): Class =>
+    ({tag: "Class", fields: fields, methods: methods, env: makeEmptyEnv()});
+
+export const makeClassEnv = (fields: VarDecl[], methods: Binding[], env: Env): Class =>
     ({tag: "Class", fields: fields, methods: methods, env: env});
+
 export const isClass = (x: any): x is Class => x.tag === "Class";
 
-export const makeObject = (fields: VarDecl[], methods: Binding[], args: Value[], env: Env): Object =>
+export const makeObject = (fields: VarDecl[], methods: Binding[], args: Value[]): Object =>
+    ({tag: "Object", fields: fields, methods: methods, args: args, env: makeEmptyEnv()});
+
+export const makeObjectEnv = (fields: VarDecl[], methods: Binding[], args: Value[], env: Env): Object =>
     ({tag: "Object", fields: fields, methods: methods, args: args, env: env});
+
 export const isObject = (x: any): x is Object => x.tag === "Object";
 
 
