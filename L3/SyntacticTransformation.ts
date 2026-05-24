@@ -1,4 +1,4 @@
-import { ClassExp, ProcExp, Exp, Program, Binding, 
+import { ClassExp, ProcExp, Exp, Program, Binding, CExp,
     makeProcExp, makeVarDecl, makeVarRef, makeIfExp, 
     makeAppExp, makePrimOp, makeLitExp} from "./L3-ast";
 import { Result, makeFailure } from "../shared/result";
@@ -14,7 +14,7 @@ Type: ClassExp => ProcExp
 export const class2proc = (exp: ClassExp): ProcExp =>{
     const baseError = makeLitExp(makeSymbolSExp("error"));
 
-    const methods = exp.methods.reduceRight((acc: Exp, method: Binding) => {
+    const methods = exp.methods.reduceRight((acc: CExp, method: Binding) => {
         
         const testCondition = makeAppExp(
             makePrimOp("eq?"),
