@@ -43,29 +43,21 @@ export const class2proc = (exp: ClassExp): ProcExp =>{
 }
 
 
-/*
-Purpose: Transform all class forms in the given AST to procs
-Signature: transform(AST)
-Type: [Exp | Program] => Result<Exp | Program>
-*/
 
+// Helper function #1: transform cexp
 const transformCExp = (exp: CExp): Result<CExp> => {
-    // Leaves / Base Cases (Nothing to transform)
+    // return as is with reusult OK
     if (isAtomicExp(exp) || isLitExp(exp)) {
         return makeOk(exp);
     } 
     
     // Target Case: ClassExp
     else if (isClassExp(exp)) {
-        // TOP-DOWN APPROACH:
-        // We first convert the ClassExp into a ProcExp using your class2proc function.
-        // Then, we recursively call transformCExp on the RESULT. 
-        // This guarantees that if a class method contains another nested class, 
-        // it will also be found and transformed!
+        // do class2proc then run again on the proc we got, incase there are classes inside it
         return transformCExp(class2proc(exp));
     } 
     
-    // Recursive Case: IfExp
+    //IfExp
     else if (isIfExp(exp)) {
         return bind(transformCExp(exp.test), (test: CExp) =>
             bind(transformCExp(exp.then), (then: CExp) =>
@@ -76,7 +68,7 @@ const transformCExp = (exp: CExp): Result<CExp> => {
         );
     } 
     
-    // Recursive Case: AppExp
+    // AppExp
     else if (isAppExp(exp)) {
         return bind(transformCExp(exp.rator), (rator: CExp) =>
             bind(mapResult(transformCExp, exp.rands), (rands: CExp[]) =>
@@ -85,16 +77,16 @@ const transformCExp = (exp: CExp): Result<CExp> => {
         );
     } 
     
-    // Recursive Case: ProcExp
+    // ProcExp
     else if (isProcExp(exp)) {
         return bind(mapResult(transformCExp, exp.body), (body: CExp[]) =>
             makeOk(makeProcExp(exp.args, body))
         );
     } 
     
-    // Recursive Case: LetExp
+    // LetExp
     else if (isLetExp(exp)) {
-        // For LetExp, we must map over the bindings and transform their values
+        // small helper function to transform the local variables of let
         const transformBinding = (b: Binding): Result<Binding> =>
             bind(transformCExp(b.val), (transformedVal: CExp) => 
                 makeOk(makeBinding(b.var.var, transformedVal))
@@ -107,15 +99,13 @@ const transformCExp = (exp: CExp): Result<CExp> => {
         );
     } 
     
-    // Fallback
+    // error
     else {
         return makeFailure(`Unexpected CExp: ${exp}`);
     }
 };
 
-// ========================================================
-// 2. General Expression Transformer (Handles Defines)
-// ========================================================
+// Helper function #2: transform define or run transformCExp
 const transformExp = (exp: Exp): Result<Exp> => {
     if (isDefineExp(exp)) {
         // Transform the value inside the define, keep the variable the same
@@ -129,18 +119,20 @@ const transformExp = (exp: Exp): Result<Exp> => {
     }
 };
 
-// ========================================================
-// 3. Main Entry Point
-// ========================================================
+/*
+Purpose: Transform all class forms in the given AST to procs
+Signature: transform(AST)
+Type: [Exp | Program] => Result<Exp | Program>
+*/
 export const transform = (exp: Exp | Program): Result<Exp | Program> => {
     if (isProgram(exp)) {
-        // Map over all expressions in the program
+        // go over all expressions in program
         return bind(mapResult(transformExp, exp.exps), (exps: Exp[]) =>
             makeOk(makeProgram(exps))
         );
-    } else if (isDefineExp(exp) || isCExp(exp)) { // Type narrowing for Exp
+    } else if (isDefineExp(exp) || isCExp(exp)) { // if not program
         return transformExp(exp);
     } else {
-        return makeFailure("Unexpected AST node");
+        return makeFailure("Unexpected AST node"); //errorr
     }
 };
